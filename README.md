@@ -3,23 +3,17 @@
 This kit is a workshop for generating batches of Lucid visualizations, and sprite sheet images, from TensorFlow frozen graphs.
 
 
-The vis directory contains some example results for quick viewing. 
+The **vis/eb_12_v07_480x270_01c/sprites** directory contains some example results for quick viewing. 
 
 
 
-### This kit comprises:
+This kit comprises:
 
-1. A graphs directory containing two series of frozen graph instances:
-
-    eb_12_v07_480x270_01b:  [ "100k", "500k" ]
-    eb_12_v07_480x270_01c:  [ "400k", "500k" ]
-
-        
-2. A lib directory containing Python modules:
-        
-    SSD_Mnet1_PPN: a Lucid graph model (i.e. extends lucid.modelzoo.vision_base.Model)
-    vis.py
-
+1. A **graphs** directory containing two series of frozen graph instances:
+    eb_12_v07_480x270_01b:  [ "100k", "500k" ]<br>
+    eb_12_v07_480x270_01c:  [ "400k", "500k" ]<br>   
+2. A **lib** directory containing Python modules.
+3. A **vis** directory containing a working example.
         
         
 ## Usage:
@@ -33,8 +27,8 @@ _Summary_
 2. **Create missing directories and files.**
 
 Edit the file "vis.js" to restrict the target layers and indexes that will be inspected (empty means all).
-
-
+<br>
+<br>
 ```
 python build_sprites.py
 ```
@@ -49,8 +43,8 @@ _Summary_
 8. **Save images to sprites directory** with filename encoding layer, index and threshold.
 
 Review the images in the sprites directory; remove any grey ones and adjust the transforms for that layer.
-   
-   
+<br>
+<br>
 ```
 build_spritemaps.py
 ```
@@ -61,6 +55,8 @@ _Summary_
 4. Detect images in sprites directory.
 5. **Update corresponding spritesheet and save**.
 6. **Move images to sprites_consumed directory**.
-        
+<br>
+<br>
+
         
         
