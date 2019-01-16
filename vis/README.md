@@ -1,8 +1,11 @@
-# vis
+# Usage:
 
-        
-## Usage:
+### Review the example in the **eb_12_v07_480x270_01b** directory.
+
+
 Open a console in the vis directory and run one of the following commands as required.<br>
+
+
 
 ```
 python build_new_graph_vis.py
@@ -14,6 +17,8 @@ _Summary_
 Edit the file "vis.js" to restrict the target layers and indexes that will be inspected (empty means all).
 <br>
 <br>
+
+
 ```
 python build_sprites.py
 ```
@@ -30,6 +35,8 @@ _Summary_
 Review the images in the **sprites** directory; remove any grey ones and adjust the transforms for that layer.
 <br>
 <br>
+
+
 ```
 python build_spritemaps.py
 ```
@@ -43,5 +50,5 @@ _Summary_
 <br>
 <br>
 
-        
+View **spritemaps.html** in a browser.  
         
