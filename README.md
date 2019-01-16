@@ -15,10 +15,9 @@ This kit depends on **tensorflow** & **lucid**, **copy**, **json**, **math**, **
 
 This kit comprises:
 
-1. A **graphs** directory containing two series of frozen graph instances:<br>
-    eb_12_v07_480x270_01b:  [ "100k", "500k" ]<br>
-    eb_12_v07_480x270_01c:  [ "400k", "500k" ]
-    
+1. A **graphs** directory containing one series of frozen graph instances:<br>
+    eb_12_v07_480x270_01b:  [ "100k", "500k" ]
+
     
 2. A **lib** directory containing Python modules.
 
