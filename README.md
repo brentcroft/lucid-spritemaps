@@ -7,12 +7,12 @@ The vis directory contains some example results for quick viewing.
 
 
 
-The kit comprises:
+This kit comprises:
 
-    Two series of frozen graph instances (in graphs directory):
+> Two series of frozen graph instances (in graphs directory):
 
-        eb_12_v07_480x270_01b:  [ "100k", "500k" ]
-        eb_12_v07_480x270_01c:  [ "400k", "500k" ]
+>> eb_12_v07_480x270_01b:  [ "100k", "500k" ]
+>> eb_12_v07_480x270_01c:  [ "400k", "500k" ]
 
         
     A set of python modules (in lib directory):
