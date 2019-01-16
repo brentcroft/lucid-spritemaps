@@ -837,6 +837,11 @@ def build_spritemaps( local_root='.', graph_version=None, model_loader=None, vis
 
                 for index, threshold, f in files:
 
+                    if threshold not in spritemaps:
+                        # stray image
+                        continue
+                        
+                        
                     spritemap_path, spritemap = spritemaps[ threshold ]
 
                     img_path = os.path.join( image_dir, f )
