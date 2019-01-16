@@ -9,12 +9,17 @@ The **vis/eb_12_v07_480x270_01c/sprites** directory contains some example result
 
 This kit comprises:
 
-1. A **graphs** directory containing two series of frozen graph instances:
+1. A **graphs** directory containing two series of frozen graph instances:<br>
     eb_12_v07_480x270_01b:  [ "100k", "500k" ]<br>
     eb_12_v07_480x270_01c:  [ "400k", "500k" ]<br>   
-2. A **lib** directory containing Python modules.
+2. A **lib** directory containing Python modules.<br>
 3. A **vis** directory containing a working example.
-        
+
+Obviously, this kit depends on **tensorflow** & **lucid**, additionally: 
+**copy**, **json**, **math**, **numpy**, **os**, **pandas**, **PIL**, **time**
+
+
+
         
 ## Usage:
 Open a console in the vis directory and run one of the following commands as required.<br>
