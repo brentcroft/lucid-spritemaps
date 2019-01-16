@@ -1,11 +1,12 @@
-# Usage:
-
 ### Review the example in the **eb_12_v07_480x270_01b** directory.
 
+In particular, the file **vis.js**, which controls the scope.
+
+
+
+# Usage:
 
 Open a console in the vis directory and run one of the following commands as required.<br>
-
-
 
 ```
 python build_new_graph_vis.py
