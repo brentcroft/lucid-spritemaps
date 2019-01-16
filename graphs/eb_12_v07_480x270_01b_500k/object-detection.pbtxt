@@ -1,0 +1,48 @@
+item {
+  id: 1
+  name: 'blackbird'
+}
+item {
+  id: 2
+  name: 'blue tit'
+}
+item {
+  id: 3
+  name: 'collared dove'
+}
+item {
+  id: 4
+  name: 'dunnock'
+}
+item {
+  id: 5
+  name: 'goldfinch'
+}
+item {
+  id: 6
+  name: 'great tit'
+}
+item {
+  id: 7
+  name: 'long tailed tit'
+}
+item {
+  id: 8
+  name: 'mouse'
+}
+item {
+  id: 9
+  name: 'robin'
+}
+item {
+  id: 10
+  name: 'sparrow'
+}
+item {
+  id: 11
+  name: 'starling'
+}
+item {
+  id: 12
+  name: 'wood pigeon'
+}
