@@ -9,8 +9,10 @@ This kit is a workshop for building batches of Lucid visualizations, and sprite-
 
 The **vis/eb_12_v07_480x270_01b** directory contains a working example with sample results. 
 
+![spritemap navigator](spritemaps.html.jpg)
 
-This kit depends on **tensorflow** & **lucid**, **copy**, **json**, **math**, **numpy**, **os**, **pandas**, **PIL**, & **time**
+
+This kit depends on **tensorflow**, **lucid**, **copy**, **json**, **math**, **numpy**, **os**, **pandas**, **PIL**, & **time**
 
 
 This kit comprises:
@@ -24,8 +26,6 @@ This kit comprises:
 
 3. A **vis** directory containing a working example.
 
+Everything happens in the **vis** directory.
 
-Everything happens from the **vis** directory.
 See the README.md file there for further details.
-
-

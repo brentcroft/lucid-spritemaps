@@ -4,6 +4,8 @@ In particular, the configuration in **vis.js**, which controls the scope.
 
 Note that **vis.js** & **model.js** are read by both python code and **spritemaps.html**, hence can't be simple JSON.
 
+Navigate the visualizations by opening **spritemaps.html** in a browser.
+
 
 # Usage:
 
@@ -52,5 +54,6 @@ _Summary_
 <br>
 <br>
 
-View **spritemaps.html** in a browser.  
-        
+Navigate the visualizations by opening **spritemaps.html** in a browser. 
+
+
