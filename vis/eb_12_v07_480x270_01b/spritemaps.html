@@ -1,0 +1,474 @@
+<html>
+    <meta charset="utf-8"/>
+    <style>
+        .zoom {
+          transition: transform .2s; /* Animation */
+          margin: 0 auto;
+        }
+
+        .zoom:hover {
+          transform: scale( 2 );
+        }  
+        
+    
+        body, div, td, p, span, pre, textarea, input {
+            margin: 5px;
+            font-size: 80%;
+            font-family: sans-serif
+        }
+        img {
+            padding: 0px;
+            margin: 0px;
+        }
+
+        
+        #vis {
+            overflow:scroll; 
+            text-align: center;   
+            background: black;
+            height:90%;
+        }
+        .vis-space-top {
+            padding-top: 100px;
+        }
+        .vis-space-bottom {
+            padding-bottom: 200px; 
+        }        
+        .image_row {
+            padding: 0px;
+            margin: 0px; 
+            height: 64px;            
+        }
+        .image_cell {
+            margin: 0px;
+        }
+    </style>
+    <script src="./model.js">
+    </script>
+    <script src="./vis.js">
+    </script>    
+    <script>
+        var graphVersion = vis.graph
+        var graphSteps = vis.steps
+        var thresholds = vis.thresholds
+        var scale = vis.scale
+
+        var layers = graph.layers
+        
+        if ( vis.target_layers )
+        {
+            new_layers = []
+            for ( l in layers )
+            {
+                var layer = layers[ l ]
+                for ( i in vis.target_layers )
+                {
+                    if ( layer.index == vis.target_layers[ i ] )
+                    {
+                        new_layers.push( layer )
+                        break
+                    }
+                }
+            }
+            
+            layers = new_layers
+        }
+        
+        
+        
+        // calculate max_row and max_col: [ max( depth / cols ), max( cols ) ]
+        function get_max_row_col( layers )
+        {
+            var max_col = 0
+            var max_row = 0
+            for ( l in layers )
+            {
+                var layer = layers[ l ]
+                var layer_rows = layer.depth / layer.cols
+                max_row = Math.max( max_row, layer_rows )
+                max_col = Math.max( max_col, layer.cols )
+            }
+            return [ max_row, max_col ]
+        }
+        
+        var get_max_row_col = get_max_row_col( layers ) 
+        
+        
+        
+        
+        // start with the highest values
+        var graphStep = graphSteps.length - 1
+        var layer = layers[ layers.length - 1 ]
+        var threshold = thresholds[ thresholds.length - 1 ]
+        
+        function log( text )
+        {
+            var current = document.getElementById( "log" ).innerHTML;
+            
+            document.getElementById( "log" ).innerHTML = current + "\n" + text;
+        }
+
+
+        function getGraph( gs )
+        {
+           return graphVersion + "_" + graphSteps[ gs ]
+        }
+
+        
+        function getImgUrl( gs, level_index, index, threshold )
+        {
+            return graphSteps[ gs ] + '/sprites/l_' + level_index + '_i_' + index + '_t_' + threshold + '.png'
+        }
+        
+        function getSpritemapUrl( gs, level_index, threshold )
+        {
+            return graphSteps[ gs ] + '/spritemaps/l_' + level_index + '_t_' + threshold + '.png'
+        }        
+        
+        function getNextThreshold( currentThreshold, higher )
+        {
+            for ( var i = 0, n = thresholds.length; i < n; i++ )
+            {
+                if ( currentThreshold == thresholds[i] )
+                {
+                    return higher ? thresholds[ Math.min( i + 1, n - 1 ) ] : thresholds[ Math.max( i - 1, 0 ) ]
+                }
+            }
+        }
+        
+        function setImgSrc( img )
+        {
+            var row_id = img.vis.row_id
+            var col_id = img.vis.col_id
+            
+            var layer = img.vis.layer
+            
+            var layer_index = layer.index
+            var cols = layer.cols
+            var depth = layer.depth
+            
+              
+            
+            if ( col_id >= layer.cols )
+            {
+                img.style.visibility = "hidden"
+                return
+            }            
+            
+            
+            var max_row = 1 + Math.trunc( layer.depth / cols )
+            
+            if ( row_id >= max_row )
+            {
+                //alert( "row_id=[" + row_id + "] > max_row=[" + max_row + "]" )
+                img.style.visibility = "hidden"
+                return
+            }
+            
+            //
+            index = ( row_id * cols ) + col_id
+   
+            img.style.visibility = ""
+            img.title = "index=" + index + " (" + row_id + ", " + col_id + ")"
+            
+            //var oldSrc = img.src
+            //var newSrc = getImgUrl( img.vis.gs, imgLayer.index, img.vis.index, img.vis.threshold )
+
+            var oldBackground = "";
+            var newBackGround = getSpritemapUrl( img.vis.gs, layer_index, img.vis.threshold )
+            
+            try
+            {
+                row = scale * row_id 
+                col = scale * col_id
+                
+                img.style.width = scale
+                img.style.height = scale
+                
+                img.src = 'blank_' + scale + 'x' + scale + '.gif'
+                var cellPosition = "-" + col + "px -" + row + "px"
+                
+                img.style = "background: url('" + newBackGround + "')"
+                img.style.backgroundPosition = cellPosition
+            } 
+            catch ( e )
+            {
+                log( "Error: newBackGround=[" + newBackGround + "], cellPosition=[" + cellPosition + "]; " + e )
+            }            
+        }
+        
+
+        
+        /*
+            changes the graph (directory)
+        */
+        function setImgVisGraphInstance( img, gs )
+        {
+            if ( img.vis.gs != gs )
+            {
+                img.vis.gs = gs
+                
+                setImgSrc( img )
+            }            
+        }        
+        
+        function setImgVisThreshold( img, threshold )
+        {
+            if ( img.vis.threshold != threshold )
+            {
+                img.vis.threshold = threshold
+                
+                setImgSrc( img )
+            }            
+        }
+        
+        function setImgVisLayer( img, layer )
+        {
+            if ( img.vis.layer.index != layer.index )
+            {
+                img.vis.layer = layer
+                
+                setImgSrc( img )
+            }            
+        }          
+        
+        function incrementImgVisSteps( img, higher )
+        {
+            setImgVisSteps( img, getNextThreshold( img.vis.threshold, higher ) )
+        }        
+        
+        
+        function imgOnWheel( event )
+        {
+            //incrementImgVisSteps( this, (event.deltaY < 0)  )           
+        }
+            
+        function createImg( gs, layer, row_id, col_id, threshold )
+        {
+            var imgId = "i_" + row_id + ":" + col_id
+            var img = document.createElement( "img" )
+            img.classList.add( 'zoom' )
+            
+            img.id = imgId
+            img.title = "row: " + row_id + ", col=" + col_id
+
+            // cache the current values on the img
+            img.vis = {
+                gs: gs,
+                row_id: row_id,
+                col_id: col_id,
+                layer: layer,
+                threshold: threshold
+            }
+
+            setImgSrc( img )
+            
+            img.onwheel = imgOnWheel;
+            
+            return img
+        }
+        
+        function createRow( container, gs, layer, row_id, cols, threshold )
+        {
+            var newRowDiv = document.createElement( "div" );
+            newRowDiv.classList.add( 'image_row' )            
+            newRowDiv.id = "row_" + row_id
+
+            for ( var col_id = 0; col_id <= cols; col_id++ )
+            {
+                var newCellSpan = document.createElement( "span" );
+                newCellSpan.classList.add( 'image_cell' )            
+
+                newRowDiv.appendChild( newCellSpan )
+            
+                newCellSpan.appendChild( createImg( gs, layer, row_id, col_id, threshold ) )
+            }
+            
+            container.appendChild( newRowDiv )
+        }
+    </script>
+    
+    
+    <body>
+        <div id="controlbar">
+            <table>
+                <tr>
+                    <td>
+                        <table>
+                            <tr>
+                                <td>Graph:</td>
+                                <td><input type="text" size="40px" id="graphVersion" tooltip="Graph"/></td>
+                            </tr>
+                        </table> 
+                    </td>
+                    <td>                        
+                        <table>
+                            <tr>
+                                <td>Instance:</td>
+                                <td>
+                                    <span id="graphStepsEcho"></span>
+                                </td>
+                                <td>
+                                    <input type="range" class="slider" id="graphSteps" tooltip="Graph Steps"/>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>                    
+                    <td>                        
+                        <table>
+                            <tr>
+                                <td>Layer:</td>
+                                <td>
+                                    <input type="range" class="slider" id="layerIndex" tooltip="Layer"/>
+                                </td>
+                            </tr>                            
+                        </table>  
+                    </td>
+                    <td>                        
+                        <table>
+                            <tr>
+                                <td>Threshold:</td>
+                                <td>
+                                    <span id="thresholdSliderEcho"></span>
+                                </td>
+                                <td>
+                                    <input type="range" class="slider" id="thresholdSlider" tooltip="Threshold"/>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td>
+                        <textarea id="log"> </textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        <span id="layerIndexEcho"></span>
+                    </td>
+                </tr>                
+            </table>
+            
+            <hr/>
+        </div>
+            
+            
+        <div id="vis">
+        </div>
+        
+        <script>
+            
+            /*
+                VERSION
+            */
+            var graphVersionInput = document.getElementById( "graphVersion" )
+            
+            graphVersionInput.value = graphVersion
+            
+            graphVersionInput.oninput = function( event ) {
+                graphVersion = graphVersionInput.value
+            }
+
+            /*
+                LAYER
+            */
+            var layerIndexSlider = document.getElementById( "layerIndex" )
+            
+            layerIndexSlider.min = 0
+            layerIndexSlider.max = layers.length - 1
+            layerIndexSlider.value = layer.index  
+            
+            document.getElementById( "layerIndexEcho" ).innerHTML = "[" + layer.index + "] " + layer.name
+            
+            layerIndexSlider.oninput = function( event ) {
+                
+                // update global
+                layer = layers[ layerIndexSlider.value ]
+                
+                document.getElementById( "layerIndexEcho" ).innerHTML = "[" + layer.index + "] " + layer.name
+                
+                var imgs = document.getElementsByTagName( "img" )
+                
+                for ( var i = 0, n = imgs.length; i < n; i++ )
+                {
+                    setImgVisLayer( imgs[ i ], layer )
+                }                
+            }
+            
+                       
+            
+            
+            /*
+                GRAPH MATURITY
+            */
+            var graphInstanceInput = document.getElementById( "graphSteps" )
+            
+            graphInstanceInput.min = 0
+            graphInstanceInput.max = graphSteps.length - 1
+            graphInstanceInput.value = graphStep            
+            
+            document.getElementById( "graphStepsEcho" ).innerHTML = graphSteps[ graphStep ]
+            
+            graphInstanceInput.oninput = function( event ) {
+                
+                // update globals
+                graphStep = graphInstanceInput.value
+                
+                document.getElementById( "graphStepsEcho" ).innerHTML = graphSteps[ graphStep ]
+                
+                var imgs = document.getElementsByTagName( "img" )
+                
+                for ( var i = 0, n = imgs.length; i < n; i++ )
+                {
+                    setImgVisGraphInstance( imgs[ i ], graphStep )
+                }                
+            }
+            
+            
+            /*
+                VISUALIZATION MATURITY
+            */
+            var thresholdSlider = document.getElementById( "thresholdSlider" )
+            
+            thresholdSlider.min = 0
+            thresholdSlider.max = ( thresholds.length - 1 )
+            thresholdSlider.value = thresholdSlider.max
+            
+            document.getElementById( "thresholdSliderEcho" ).innerHTML = thresholds[ thresholdSlider.value ]
+
+            thresholdSlider.oninput = function( event ) {
+                
+                // update global threshold
+                threshold = thresholds[ thresholdSlider.value ]
+
+                document.getElementById( "thresholdSliderEcho" ).innerHTML = threshold
+
+                var imgs = document.getElementsByTagName( "img" )
+                
+                for ( var i = 0, n = imgs.length; i < n; i++ )
+                {
+                    setImgVisThreshold( imgs[ i ], threshold )
+                }
+            }
+            
+            
+            
+            /*
+                DISPLAY
+            */
+            vis_element = document.getElementById( "vis" )
+            var topSpace = document.createElement( "div" );
+            topSpace.classList.add( 'vis-space-top' )
+            vis_element.appendChild( topSpace )
+            
+            for ( r = 0; r < get_max_row_col[0]; r++ )
+            {
+                createRow( vis_element, graphStep, layer, r, get_max_row_col[1], threshold )
+            }
+            
+            var bottomSpace = document.createElement( "div" );
+            bottomSpace.classList.add( 'vis-space-bottom' )
+            vis_element.appendChild( bottomSpace )
+
+        </script>
+    </body>
+</html>
