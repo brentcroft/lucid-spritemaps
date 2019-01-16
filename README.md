@@ -1,6 +1,8 @@
 # lucid-spritemaps
 
-This kit is a workshop for building batches of Lucid visualizations, and sprite-sheet images, from TensorFlow frozen graphs.
+This kit is a workshop for building batches of Lucid visualizations, and sprite-sheet images, from series of TensorFlow frozen graphs.
+
+![l_0_t_1024](vis/eb_12_v07_480x270_01b/500k/spritemaps/l_0_t_256.png)
 
 ![l_23_t_1024](vis/eb_12_v07_480x270_01b/500k/spritemaps/l_23_t_256.png)
 
