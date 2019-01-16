@@ -23,46 +23,44 @@ The vis directory contains some example results for quick viewing.
         
         
 ## Usage:
-
 Open a console in the vis directory and run one of the following commands as required.<br>
-
-
 
 ```
 python build_new_graph_vis.py
 ```
 _Summary_
-    Read configuration
-    **Create missing directories and files.**
+Read configuration
+**Create missing directories and files.**
 
-    Edit the file "vis.js" to restrict the target layers and indexes that will be inspected (empty means all).
+Edit the file "vis.js" to restrict the target layers and indexes that will be inspected (empty means all).
 
 
 ```
 python build_sprites.py
 ```
 _Summary_
-    Read configuration
-    Open the graph model.
-    Iterate over specified (instances and) layers and indexes
-    Not including existing work in sprites and sprites_consumed directories.
-    Apply Lucid over a sequence of thresholds obtaining images and loss values.
-    Detect visualization problems (e.g. recurring loss value implies grey image)
-    Log loss values and status at each threshold.
-    **Save images to sprites directory** with filename encoding layer, index and threshold.
-        
-    Review the images in the sprites directory; remove any grey ones and adjust the transforms for that layer.
-        
+Read configuration
+Open the graph model.
+Iterate over specified (instances and) layers and indexes
+Not including existing work in sprites and sprites_consumed directories.
+Apply Lucid over a sequence of thresholds obtaining images and loss values.
+Detect visualization problems (e.g. recurring loss value implies grey image)
+Log loss values and status at each threshold.
+**Save images to sprites directory** with filename encoding layer, index and threshold.
+    
+Review the images in the sprites directory; remove any grey ones and adjust the transforms for that layer.
+   
+   
 ```
 build_spritemaps.py
 ```
 _Summary_
-    Read configuration
-    **Create missing spritesheet files** (for each instance) for each layer, for each threshold 
-    Iterate over specified (instances and) layers and indexes.
-    Detect images in sprites directory.
-    **Update corresponding spritesheet and save**.
-    **Move images to sprites_consumed directory**.
+Read configuration
+**Create missing spritesheet files** (for each instance) for each layer, for each threshold 
+Iterate over specified (instances and) layers and indexes.
+Detect images in sprites directory.
+**Update corresponding spritesheet and save**.
+**Move images to sprites_consumed directory**.
         
         
         
