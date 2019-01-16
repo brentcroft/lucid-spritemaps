@@ -1,7 +1,8 @@
 ### Review the example in the **eb_12_v07_480x270_01b** directory.
 
-In particular, the file **vis.js**, which controls the scope.
+In particular, the configuration in **vis.js**, which controls the scope.
 
+Note that **vis.js** & **model.js** are read by both python code and **spritemaps.html**, hence can't be simple JSON.
 
 
 # Usage:
