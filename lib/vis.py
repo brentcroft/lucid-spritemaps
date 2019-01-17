@@ -556,7 +556,7 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
         
         #
         max_index = step_vis[ 'max_index' ] if 'max_index' in step_vis else 2048
-        scale = step_vis['scale'] if 'scale' in step_vis else [ 64 ]
+        scale = step_vis['scale'] if 'scale' in step_vis else 64
         thresholds = step_vis['thresholds'] if 'thresholds' in step_vis else [ 64 ]
         vis_loss = step_vis[ 'loss' ] if 'loss' in step_vis else {}
 
