@@ -776,7 +776,7 @@ def build_spritemaps( local_root='.', graph_version=None, model_loader=None, vis
 
         update_dict_from_json( json_path=os.path.join( graph_step_dir, vis_filename ), updatee=step_vis )    
     
-        scale = step_vis['scale'] if 'scale' in step_vis else [ 64 ]
+        scale = step_vis['scale'] if 'scale' in step_vis else 64
         thresholds = step_vis['thresholds'] if 'thresholds' in step_vis else [ 64 ]
         
 
