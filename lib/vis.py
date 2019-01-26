@@ -9,7 +9,7 @@ import json
 import time
 
 import numpy as np
-import PIL
+from PIL import Image
 import pandas as pd
 
 """
@@ -23,7 +23,7 @@ import lucid.optvis.objectives as objectives
 import lucid.optvis.param as param
 import lucid.optvis.transform as transform
 
-
+import lucid_images
 """
 
 """
@@ -32,10 +32,21 @@ current_timestamp = lambda: time.strftime( "%Y-%m-%d %H:%M:%S", time.gmtime() )
     
 def create_blank_images( dir=None, scales=[ 64, 128, 256, 512 ]):
     for d in scales:
-        img = PIL.Image.new( 'RGB', ( d, d ), ( 255, 0, 0, 0 ) )
+        img = Image.new( 'RGB', ( d, d ), ( 255, 0, 0, 0 ) )
         img.save( os.path.join( dir, 'blank_{}x{}.gif'.format( d, d ) ), 'GIF', transparency=0 )    
 
 
+def check_abort( dirs = [] ):
+    vf_abort = [
+        vf[0]
+        for vf in [
+            ( vf, update_dict_from_json( json_path=vf ) )
+            for vf in dirs
+        ]
+        if 'abort' in vf[1] and vf[1][ 'abort' ]
+    ]
+    return vf_abort      
+        
     
 def get_transforms( complexity=0 ):
     if complexity == 4:
@@ -72,21 +83,12 @@ def get_transforms( complexity=0 ):
     else:
         # no transforms
         return []
-    
-def get_vis_set( adam=0.05, scale=64, transform_id=0 ):
-    return ( 
-        tf.train.AdamOptimizer( adam ), 
-        lambda: param.image( scale, fft=True, decorrelate=True ), 
-        get_transforms( transform_id ) 
-    )
-    
 
-def get_image( array ):
-    image_data = normalize_array( array )
-    image = PIL.Image.fromarray( image_data )
-    # force complete load
-    image.load()
-    return image
+
+def get_pil_image( array ):
+    img = Image.fromarray( normalize_array( array ) )
+    img.load()
+    return img
 
 
     
@@ -131,7 +133,8 @@ def get_visualizations_and_losses(
         objective_f, 
         param_f=None, 
         optimizer=None,
-        transforms=None, 
+        transforms=None,
+        threshold_start=0,
         thresholds=( 64, 128, 256, 512, 1024 ),
         visualization_index=None,
         visualization_layer=None,
@@ -156,7 +159,7 @@ def get_visualizations_and_losses(
             bin_losses = []
             bin_hits = 0
             
-            for i in range( max( thresholds ) + 1 ):
+            for i in range( threshold_start, max( thresholds ) + 1 ):
             
                 threshold_loss, _ = sess.run( [ loss, vis_op ] )
                 
@@ -214,7 +217,7 @@ def get_visualizations_and_losses(
         return images
 
 
-def store_visualizations_and_losses( v_l_lists, output_dir=None, fmt='png', quality=100 ):
+def store_visualizations_and_losses( v_l_lists, output_dir=None, scale=64 ):
     for v_l_list in v_l_lists:
         for v_l in v_l_list:
             threshold = v_l[0]
@@ -223,18 +226,24 @@ def store_visualizations_and_losses( v_l_lists, output_dir=None, fmt='png', qual
             index = v_l[3]
             layer = v_l[4]
             
-            image = get_image( np.hstack( vis ) )
+            pil_img = get_pil_image( np.hstack( vis ) )
             
             if not os.path.isdir( output_dir ):
                 os.mkdir( output_dir )
             
-            image_path = get_image_path( output_dir, layer, index, threshold )
-            image.save( image_path, fmt, quality=quality )
+            try:
+                image_path = get_image_path( output_dir, layer, index, threshold, scale )
+                
+                pil_img.save( image_path )
             
-            print( "  saved image: {}".format( image_path ) )            
+                print( "  saved image: {}".format( image_path ) )            
+            
+            except Exception as e:
+                print( "Failed saving image: {}".format( image_path ) )
+                raise e
             
             #
-            image.close()
+            pil_img.close()
             v_l[1] = None
             vis = None
             
@@ -256,7 +265,7 @@ def get_layer_spritemaps( output_dir=None, layer_index=None, thresholds=None, si
         
         try:
             if os.path.isfile( spritemap_path ):
-                spritemap = PIL.Image.open( spritemap_path )
+                spritemap = Image.open( spritemap_path )
                 spritemap.load()
                 spritemaps[ threshold ] = ( spritemap_path, spritemap )
                 #print( "Opened existing spritemap: [{}]".format( spritemap_path ) )
@@ -265,7 +274,7 @@ def get_layer_spritemaps( output_dir=None, layer_index=None, thresholds=None, si
             
         if spritemap is None:
             try:
-                spritemap = PIL.Image.new( "RGB", size )
+                spritemap = Image.new( "RGB", size )
                 spritemap.save( spritemap_path, "PNG" )
                 spritemaps[ threshold ] = ( spritemap_path, spritemap )
                 print( "Created new spritemap: [{}]".format( spritemap_path ) )
@@ -301,28 +310,19 @@ def add_sprite( spritemap=None, sprite=None, size=( 64, 64 ), cols=1, index=0 ):
     except Exception as e:
         print( "Error pasting sprite: box=[{}]; {}".format( box, e ) )
         raise e
-            
-def update_spritemap( v_l_lists, spritemaps=None, size=(64,64), cols=1 ):
-    for v_l_list in v_l_lists:
-        for v_l in v_l_list:
-            threshold = v_l[0]
-            vis = v_l[1]
-            # loss = round( v_l[2], 2 )
-            index = v_l[3]
-            #layer = v_l[4]
-            
-            add_sprite( 
-                spritemap = spritemaps[ threshold ], 
-                sprite = get_image( np.hstack( vis ) ),
-                index = index,
-                cols = cols,
-                size = size
-            )
+
   
-def get_image_path( output_dir, layer, index, threshold ):
-    return os.path.join( output_dir, "l_{}_i_{}_t_{}.png".format( layer, index, threshold ) )  
+def get_image_path( output_dir, layer, index, threshold, scale ):
+    return os.path.join( output_dir, "l_{}_i_{}_t_{}_s_{}.png".format( layer, index, threshold, scale ) )  
     
-def extract_layer_index( s, layer_index=0 ):
+def extract_layer( s ):
+    prefix='l_'
+    suffix='_i_'    
+    start = s.find( prefix ) + len( prefix )
+    end = s.find( suffix, start )
+    return int( s[ start:end ] )
+    
+def extract_index( s, layer_index=0 ):
     prefix='l_{}_i_'.format( layer_index )
     suffix='_t_'
     start = s.find( prefix ) + len( prefix )
@@ -331,11 +331,46 @@ def extract_layer_index( s, layer_index=0 ):
 
 def extract_threshold( s ):
     prefix='_t_'
-    suffix='.png'    
+    suffix='_s_'    
     start = s.find( prefix ) + len( prefix )
     end = s.find( suffix, start )
     return int( s[ start:end ] )
 
+def extract_scale( s ):
+    prefix='_s_'
+    suffix='.png'    
+    start = s.find( prefix ) + len( prefix )
+    end = s.find( suffix, start )
+    return int( s[ start:end ] )    
+    
+    
+def extract_coords( f ):
+    prefix = 'l_'
+    layer_index_sep = '_i_'    
+    index_threshold_sep = '_t_'
+    threshold_scale_sep = '_s_'
+    suffix='.png'
+    
+    layer_start = len( prefix )
+    layer_end = f.find( layer_index_sep, layer_start )
+    index_start = layer_end + len( layer_index_sep )
+    index_end = f.find( index_threshold_sep, index_start )
+    threshold_start = index_end + len( index_threshold_sep )
+    threshold_end = f.find( threshold_scale_sep, threshold_start )
+    scale_start = threshold_end + len( threshold_scale_sep )
+    scale_end = f.find( suffix, scale_start )
+    
+    layer = int( f[ layer_start:layer_end ] )
+    index = int( f[ index_start:index_end ] )
+    threshold = int( f[ threshold_start:threshold_end ] )
+    scale = int( f[ scale_start:scale_end ] )
+    
+    return ( layer, index, threshold, scale )
+
+
+    
+    
+    
 """
     Not strict JSON, as needs to load in html
 """    
@@ -373,19 +408,29 @@ def update_dict_from_json( json_path=None, json_prefix='vis = ', updatee=None ):
             raise ValueError( "Failed to update from: {}".format( json_path ), e )
 
     return updatee        
-            
-            
-def has_existing_images( image_dir, layer_index, index, thresholds ):
-    existing_images = [
-        path 
-        for path in [
-            get_image_path( image_dir, layer_index, index, threshold )
-            for threshold in thresholds
-        ]
-        if os.path.isfile( path )
-    ]
+
+
     
-    return ( len( existing_images ) == len( thresholds ) )
+def get_existing_sprite_details( sprite_dirs=[], scale=64 ):
+    existing_sprite_details = {}
+    for sd in sprite_dirs:
+        # only interested in ones at current scale
+        for layer, index, threshold, _ in [ coords for coords in [ extract_coords( f ) for f in os.listdir( sd ) ] if coords[3] == scale ]:
+            if layer in existing_sprite_details:
+                layer_d = existing_sprite_details[ layer ]
+            else:
+                layer_d = {}
+                existing_sprite_details[ layer ] = layer_d
+                
+            if index in layer_d:
+                index_d = layer_d[ index ]
+            else:
+                index_d = {}
+                layer_d[ index ] = index_d
+                
+            if threshold not in index_d:
+                index_d[ threshold ] = threshold
+    return existing_sprite_details
 
 """
     
@@ -523,9 +568,10 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
     
     # 
     graph_steps = vis[ 'steps' ] if 'steps' in vis else []
-    
- 
 
+    if len( graph_steps ) == 0:
+        print( "no graph instances" )
+        return
     
     for graph_step in graph_steps:
 
@@ -547,6 +593,12 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
         if not os.path.isdir( sprite_map_dir ):
             os.mkdir( sprite_map_dir )        
 
+        sprite_dirs = [
+            d
+            for d in [ image_dir, image_consumed_dir, image_scum_dir ]
+            if os.path.isdir( d )
+        ]
+            
         
         # graph step specific config
         step_vis = deepcopy( vis )    
@@ -579,9 +631,12 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
                 if target_layers is None or len( target_layers ) == 0 or layer['index'] in target_layers
             ]    
             
-        target_indexes=[] if 'target_indexes' not in vis else vis['target_indexes']
-
+        target_indexes = [] if 'target_indexes' not in vis else vis['target_indexes']
         
+        use_cppn = True if 'param' in vis and vis['param'] == 'cppn' else False
+        
+        # load existing sprite details
+        existing_sprite_details = get_existing_sprite_details( sprite_dirs=sprite_dirs, scale=scale )  
             
         print( "\nBUILDING SPRITES: graph_version={} steps={}".format( graph_version, graph_step ) )    
         print( "   layers={}".format( [ layer['index'] for layer in layers ] ) ) 
@@ -595,9 +650,13 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
             adam = layer['adam']
             transform_id = layer['transform_id']
             
-            optimizer, param_f, transforms = get_vis_set( adam=adam, scale=scale, transform_id=transform_id )
-
             model = None
+            
+            optimizer = tf.train.AdamOptimizer( adam )
+            transforms = get_transforms( transform_id ) 
+            
+            #
+            existing_layer_sprites = existing_sprite_details[ layer_index ] if layer_index in existing_sprite_details else []
 
             try:                
                 print( "\nLAYER: {}\n".format( layer ) )
@@ -607,17 +666,13 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
                 for index in range( 0, max_index ):
                 
                     # check for abort in vis files
-                    vf_abort = [
-                        vf
-                        for vf in [
-                            os.path.join( graph_version_path, vis_filename ),
-                            os.path.join( graph_step_dir, vis_filename )
-                        ]
-                        if 'abort' in update_dict_from_json( json_path=vf )                            
-                    ]
+                    vf_abort = check_abort( dirs=[
+                                os.path.join( graph_version_path, vis_filename ),
+                                os.path.join( graph_step_dir, vis_filename )
+                            ] )
                     
                     if len( vf_abort ) > 0:
-                        print( "Detected abort in vis files: {}".format( vf_abort ) ) 
+                        print( "\nDetected abort in vis files: {}".format( vf_abort ) ) 
                         return                        
 
                         
@@ -626,18 +681,55 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
                     if not ( target_indexes is None or len( target_indexes ) == 0 or index in target_indexes ):
                         continue;
 
+                    # 
+                    existing_index_sprite_thresholds = existing_layer_sprites[ index ] if index in existing_layer_sprites else []
 
-                        
-                    # check any existing
-                    if has_existing_images( image_dir, layer_index, index, thresholds ):
+                    # calculate work to do
+                    # do all thresholds already existing
+                    thresholds_to_generate = [ t for t in thresholds if t not in existing_index_sprite_thresholds ]
+
+                    if len( thresholds_to_generate ) == 0:
                         continue
-                
-                    if has_existing_images( image_consumed_dir, layer_index, index, thresholds ):
-                        continue                        
-                        
-                    if os.path.isdir( image_scum_dir ) and has_existing_images( image_scum_dir, layer_index, index, thresholds ):
-                        continue                        
 
+                    # can start from an existing threshold
+                    max_existing_threshold = max( existing_index_sprite_thresholds ) if len( existing_index_sprite_thresholds ) > 0 else None
+                    
+                    if max_existing_threshold is not None and max_existing_threshold <= min( thresholds_to_generate ):
+                        
+                        threshold_start = max_existing_threshold + 1
+                        
+                        img_path = [ 
+                            ip
+                            for ip in [
+                                get_image_path( sd, layer_index, index, max_existing_threshold, scale ) 
+                                for sd in sprite_dirs 
+                            ]
+                            if os.path.isfile( ip )
+                        ][0]
+                        
+                        with Image.open( img_path ) as im:
+                            im.load()
+                            
+                            # make array
+                            im_1 = np.array( im )
+                            
+                        # add dummy batch dimension
+                        im_2 = np.expand_dims( im_1, axis=0 )
+                        
+                        # reduce less than one
+                        init_val = im_2.astype( np.float32 ) / 256
+                        
+                        param_f = lambda: lucid_images.image( scale, fft=False, init_val=init_val )
+                        
+                    elif use_cppn:
+                        threshold_start = 0
+                        adam = 0.00055
+                        optimizer = tf.train.AdamOptimizer( adam )
+                        param_f = lambda: param.cppn( scale )                    
+
+                    else:
+                        threshold_start = 0
+                        param_f = lambda: param.image( scale, fft=True, decorrelate=True )
 
                         
                     # drop the model regularly
@@ -675,6 +767,7 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
                             transforms=transforms, 
                             param_f=param_f,
                             optimizer=optimizer,
+                            threshold_start=threshold_start,
                             thresholds=thresholds,
                             visualization_index=index,
                             visualization_layer=layer_index,
@@ -705,10 +798,14 @@ def build_sprites( local_root='.', graph_version=None, model_loader=None, vis=No
                         
                     finally:                    
                         if len( visualizations ) > 0:
-                            store_visualizations_and_losses( visualizations, image_dir )
+                            store_visualizations_and_losses( visualizations, output_dir=image_dir, scale=scale )
 
             except ValueError as e:
-                print( "Closing layer on error: {}".format( e ) )  
+                msg = "{}".format( e )
+                if 'slice index' in msg and 'out of bounds' in msg:
+                    print( "Closing layer: slice index out of bounds: {}".format( e ) )  
+                else:
+                    raise e
 
 """
 
@@ -827,7 +924,7 @@ def build_spritemaps( local_root='.', graph_version=None, model_loader=None, vis
 
             try:
                 files = [
-                    ( extract_layer_index( f, layer_index=layer_index ), extract_threshold( f ), f )
+                    ( extract_index( f, layer_index=layer_index ), extract_threshold( f ), f )
                     for f in all_files
                     if f.startswith( layer_file_prefix )
                 ]
@@ -846,7 +943,7 @@ def build_spritemaps( local_root='.', graph_version=None, model_loader=None, vis
 
                     img_path = os.path.join( image_dir, f )
 
-                    with PIL.Image.open( img_path ) as im:
+                    with Image.open( img_path ) as im:
                         im.load()
 
                         try:
